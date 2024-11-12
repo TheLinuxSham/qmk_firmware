@@ -90,8 +90,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [_LAYER1] = LAYOUT_split_3x5_3(
     KC_1,   KC_2,    KC_3,    KC_4,    KC_5,        KC_6,    KC_7,    KC_8,    KC_9,    KC_0,
     KC_GRV, KC_NO,   KC_NO,   KC_NO,   KC_NO,       KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, KC_QUOT,
-    KC_NO,  KC_NO,   KC_NO,   KC_NO,   KC_NO,       KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, KC_BSLS,
-                       KC_TRNS, KC_TRNS, KC_NO,       TD(SPC_LAYR1),   KC_NO,   KC_NO
+    KC_LSFT,  KC_NO,   KC_NO,   KC_NO,   KC_NO,       KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, KC_BSLS,
+                       KC_TRNS, KC_TRNS, KC_LCTL,       TD(SPC_LAYR1),   KC_RIGHT_ALT,   KC_NO
 ),
 
 /*
@@ -127,10 +127,10 @@ td_state_t cur_dance(tap_dance_state_t *state) {
         // TD_DOUBLE_SINGLE_TAP is to distinguish between typing "pepper", and actually wanting a double tap
         // action when hitting 'pp'. Suggested use case for this return value is when you want to send two
         // keystrokes of the key, and not the 'double tap' action/macro.
-        if (state->pressed) {
-            return TD_DOUBLE_HOLD;
-        } else {
+        if (!state->pressed) {
             return TD_DOUBLE_TAP;
+        } else {
+            return TD_DOUBLE_HOLD;
         }
     } else {
         return TD_UNKNOWN;
@@ -148,7 +148,7 @@ void layer1_toggle(tap_dance_state_t *state, void *user_data) {
     ql_tap_state.state = cur_dance(state);
     switch (ql_tap_state.state) {
         case TD_SINGLE_TAP:
-            tap_code(KC_SPC);
+            tap_code(KC_ENT);
             break;
         case TD_SINGLE_HOLD:
             layer_on(_LAYER1);
@@ -180,7 +180,7 @@ void layer2_toggle(tap_dance_state_t *state, void *user_data) {
     ql_tap_state.state = cur_dance(state);
     switch (ql_tap_state.state) {
         case TD_SINGLE_TAP:
-            tap_code(KC_ENT);
+            tap_code(KC_SPC);
             break;
         case TD_SINGLE_HOLD:
             layer_on(_LAYER2);
@@ -211,23 +211,11 @@ void layer2_reset(tap_dance_state_t *state, void *user_data) {
 void super_toggle(tap_dance_state_t *state, void *user_data) {
     ql_tap_state.state = cur_dance(state);
     switch (ql_tap_state.state) {
-        case TD_SINGLE_TAP:
-            tap_code(KC_LGUI);
-            break;
         case TD_SINGLE_HOLD:
             tap_code(KC_LGUI);
             break;
-        case TD_DOUBLE_TAP:
-            // Check to see if the layer is already set
-            if (layer_state_is(_LAYER2)) {
-                // If already set, then switch it off
-            } else {
-                // If not already set, then switch the layer on
-            }
-            break;
         case TD_DOUBLE_HOLD:
-            register_code(KC_LGUI);
-            register_code(KC_LSFT);
+            tap_code(MOD_MASK_SG);
             break;
         default:
             break;
@@ -235,14 +223,12 @@ void super_toggle(tap_dance_state_t *state, void *user_data) {
 }
 
 void super_reset(tap_dance_state_t *state, void *user_data) {
-    // If the last state was TD_DOUBLE_HOLD, unregister LGUI and LSFT
-    if (ql_tap_state.state == TD_DOUBLE_HOLD || ql_tap_state.state == TD_SINGLE_HOLD) {
+    if (ql_tap_state.state == TD_DOUBLE_HOLD) {
         unregister_code(KC_LGUI);
         unregister_code(KC_LSFT);
     }
     ql_tap_state.state = TD_NONE;
 }
-
 // Associate our tap dance key with its functionality
 tap_dance_action_t tap_dance_actions[] = {
     [SPC_LAYR1] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, layer1_toggle, layer1_reset),
